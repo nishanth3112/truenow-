@@ -66,6 +66,11 @@ Observed conflict patterns, all resolved by rules 2–3 with no special case:
 - Stale, all snapshots: `/switch-and-earn`, `/calculators/vehicle-affordability` 2023–26 MY 60 mo
   **5.34%**, 84 mo **5.54%** (eff 1/1/2026); also `/personal/checking-accounts` 01–04.
 - 05 older tiers also moved: 2017-20 MY 60 mo 6.14% → 6.34%; 2016 MY 48 mo 8.39% → 8.59%.
+- More stale pairs in 05 (owner + alias + `/rates`, eff 08/31/2026, vs `/calculators/vehicle-affordability`
+  and `/switch-and-earn`, eff 1/1/2026): 2021-23 MY 72 mo **5.79%** vs 2021-22 MY 5.74%; 2021-23 MY
+  84 mo **6.04%** vs 2021-22 MY 5.99%; 2017-20 MY 72 mo **6.49%** vs 6.44%.
+  (`dev/trace.py '2021-2[23] Model Year \| (72|84) Months' -g --snap 05`,
+  `dev/trace.py '2017-20 Model Year \| 72 Months' -g --snap 05`)
 
 ### 2. Mortgage 30 / 15 year by amount (dup-009, dup-011)
 - 05 owner `/personal/loans/home-loans` (eff 09/25/2026), Rate / APR: purchase 30-yr $100k
@@ -75,6 +80,12 @@ Observed conflict patterns, all resolved by rules 2–3 with no special case:
   6.000% (05/19); 03 6.125% / 5.875% (06/04); 04 6.375% / 6.000% (08/26); 05 7.13% / 6.75% (09/25).
 - Stale, all snapshots: `/homebuying-guidance` (eff 04/22/2026) purchase 30-yr $832,750 6.000% /
   **6.037%**, $300k 6.000% / **6.061%**, $200k 5.875% / **5.954%**; `/mortgage-refi` the refinance twin.
+- Full stale set in 05, APR (owner `/personal/loans/home-loans` eff 09/25/2026 vs stale page eff
+  04/22/2026): purchase 30-yr $100k 7.27% vs 5.884%; purchase 20-yr **7.26% vs 6.005%**;
+  purchase 15-yr 6.88% vs 5.623% (`/homebuying-guidance`); refinance 30-yr $832,750 7.30% vs 6.049%,
+  $300k **7.33% vs 6.072%**, $200k **7.35% vs 5.966%**, $100k **7.28% vs 5.896%**; refinance 20-yr
+  **7.28% vs 6.021%**; refinance 15-yr **6.88% vs 5.623%** (`/mortgage-refi`).
+  (`dev/trace.py '(Purchase|Refinance): (15|20|30)-Year Fixed Conventional' -g --snap 05`)
 - `6.7%`: in no snapshot (only 6.74% home-equity loan 5 years). dup-011 prose "15-year 6.25%" is not
   in any mortgage table; 6.25% is the HELOC rate.
 
@@ -91,6 +102,16 @@ Observed conflict patterns, all resolved by rules 2–3 with no special case:
 ### 5. Health Savings Account
 - All snapshots: $25,000+ **0.35%**; $10,000–$24,999.99 0.30%; $2,500–$9,999.99 0.25%;
   $0.01–$2,499.99 0.20%. Unchanged. In 01–04 the table has no product column (heading only).
+
+### 5b. Achieve Money Market
+- 05: only on `/earn-more` (landing page, no effective date): introductory 4.00% dividend rate /
+  3.66% APY for the first 6 months, then 3.20% / 3.25% APY; $25,000 to open; tiers from $25,000.
+  `/personal/savings-account` names it in a link "[Achieve](…/earn-more)", so `/earn-more` is its
+  owner page. `/membermoneymarket-lp` still shows the pre-intro table (eff 10/01/2025).
+  01–04: on `/makethemost-lp`; 04 also on `/personal/savings-account` and `/rates`.
+  (`dev/trace.py 'Achieve' -g --snap 05`, `dev/trace.py 'earn-more' -g --snap 05`)
+- 05 IRA specials: Roth 10-month jumbo 4.00% APY but Traditional 10-month jumbo 3.90% APY on both
+  `/personal/retirement` and `/rates` (different products; not a conflict under rule 5).
 
 ### 6. Bright Savings (dup-050)
 - All snapshots: $0.01–$1,000,000, dividend 2.23%, **APY 2.25%**; 05 eff 06/02/2026. Also on

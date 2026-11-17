@@ -10,20 +10,27 @@ from kb.tables import parse_tables
 
 @dataclass(frozen=True)
 class Fact:
-    family: str  # product family, e.g. "auto"
-    metric: str  # "APR", "APY", "dividend"
+    family: str  # product family, e.g. "auto", "share_savings", "mortgage"
+    variant: str  # space-joined sorted tags: "business", "jumbo special", "purchase", "intro"
+    metric: str  # "APR", "APY", "dividend", "rate", "APY first 6 months", ...
     term: int | None  # months
-    lo: float  # qualifier range: model years for auto
+    lo: float  # qualifier range: model years (auto) or dollars (balance, loan amount)
     hi: float
-    value: float  # percent
-    label: str  # the row's qualifier as printed, e.g. "2024-27 Model Year"
+    value: str  # canonical percent text: "5.39%", "6.125%", "12.50%-19.50%"
+    product: str  # display name, e.g. "Business Share Savings"
+    label: str  # the row's qualifier as printed, e.g. "2024-27 Model Year", "$25,000+"
+    minimum: str  # minimum to earn, when the table gives one
     url: str
     kind: str  # page kind
     tier: int  # currency rule 2, lower wins
-    effective: date | None  # the table's effective date
+    effective: date | None  # the table's (or sentence's) effective date
     fetched_at: str
     snapshot_id: str
-    quote: str  # the cleaned table row
+    quote: str  # the cleaned table row or sentence
+
+    @property
+    def num(self) -> float:
+        return float(self.value.split("%")[0])
 
 
 @dataclass
@@ -54,9 +61,9 @@ class Change:
     new: Fact
 
 
-def build_snapshot(snapshot, extractors) -> SnapshotFacts:
-    """Canonicalize pages (later fetched_at wins on a URL clash), then run every extractor on
-    every table of every page."""
+def build_snapshot(snapshot, extractors, page_extractors=(), post=()) -> SnapshotFacts:
+    """Canonicalize pages (later fetched_at wins on a URL clash), run every table extractor on
+    every table and every page extractor on every page, then each snapshot-wide post step."""
     sf = SnapshotFacts(snapshot.snapshot_id, snapshot.taken_on)
     for p in snapshot.pages:
         url = canonical_url(p.url)
@@ -67,11 +74,15 @@ def build_snapshot(snapshot, extractors) -> SnapshotFacts:
             url, path, page_kind(path), p.title, strip_noise(p.markdown), p.fetched_at
         )
     for page in sf.pages.values():
+        for extract in page_extractors:
+            sf.facts.extend(extract(page, sf.snapshot_id))
         if "|" not in page.markdown:
             continue
         for table in parse_tables(page.markdown):
             for extract in extractors:
                 sf.facts.extend(extract(table, page, sf.snapshot_id))
+    for step in post:
+        step(sf)
     return sf
 
 

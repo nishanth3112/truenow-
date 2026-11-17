@@ -261,10 +261,13 @@ API key, and the LLM path is kept only if it raises dev qa net of speed and cons
 ### Phase 5: Conflicts curation (Size: M)
 Verified when: local conflicts F1 and resolution accuracy are logged and stable across a
 re-run.
-- Acceptance criteria: conflicts from the ledger (same key, different values) within the latest
-  snapshot, stale values still visible, and rate-sheet changes across snapshots; ranked by
-  confidence and capped (start at 40); topics include product + qualifier + metric; values carry
-  units; each has resolution and reason.
+- Acceptance criteria: conflicts from the ledger (same key, different values) checked within
+  **every** snapshot, not just the latest (this covers lc-13, the 01–03 card fine print); one
+  conflict per fact, listing every page that shows a competing value as its sources (the scorer
+  matches conflicts one-to-one, so splitting a fact across entries only costs precision); ranked
+  by confidence and capped (start at 40); topics include product + qualifier + metric; values
+  carry units; each has resolution and reason. Pure changes between snapshots with no stale copy
+  left remain a precision decision made here, against the local gold.
 - Verification command: dev eval with `--conflicts-gold dev/conflicts_gold_local.json`.
 - Blocked by: 2.3, 3.3.
 
@@ -327,12 +330,20 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | Rule 4 (releases) | Releases answer counts, recognitions, hours, closures and program facts, newest publish date first; never rates | Branch count, Forbes, hours, Hy-Vee closure, Home$tart and VTO exist only in releases (Phase 0 traces) |
 | Lint config | `ruff.toml` (py311, line length 100, rules E, F, I, B, UP) | No `pyproject.toml` allowed; a repo config stops the user's global ruff config from applying |
 | Local conflicts gold | `dev/conflicts_gold_local.json` is frozen; it changes only with new `dev/TRACES.md` evidence, and each change is logged here | Keeps the conflicts pillar a fixed target instead of being tuned to the system |
+| Gold change 2026-11-17 | Added lc-22 (2021-23 MY 72 mo 5.79% vs 5.74%), lc-23 (2021-23 MY 84 mo 6.04% vs 5.99%), lc-24 (2017-20 MY 72 mo 6.49% vs 6.44%); 21 → 24 entries | Re-derived with `dev/trace.py` on snapshot 05: owner page, alias and `/rates` (eff 08/31/2026) vs `/calculators/vehicle-affordability` and `/switch-and-earn` (eff 1/1/2026); `dev/TRACES.md` §1 |
+| Gold change 2026-11-17 (2) | Added lc-25 (purchase 20-yr 7.26% vs 6.005%), lc-26/27/28 (refinance 30-yr $300k/$200k/$100k 7.33/7.35/7.28% vs 6.072/5.966/5.896%), lc-29 (refinance 20-yr 7.28% vs 6.021%), lc-30 (refinance 15-yr 6.88% vs 5.623%); 24 → 30 entries | Re-derived with `dev/trace.py` on snapshot 05: owner `/personal/loans/home-loans` (eff 09/25/2026) vs `/homebuying-guidance` and `/mortgage-refi` (eff 04/22/2026); `dev/TRACES.md` §2 |
+| Conflict shape | One conflict per fact, with every page showing a competing value as its sources | `harness/scoring.py` `score_conflicts` matches each gold entry to at most one submitted conflict and counts every submission in precision, so one entry per fact is the most precise shape |
+| Conflict scope | `conflicts()` checks for contradictions within every snapshot, not only the latest | lc-13 (Platinum Visa 12.50%–19.50% vs fine print 13.00%–20.00%) exists only in 01–03; a member could have read both that day |
+| Pure changes between snapshots | Not reported by default; decided in Phase 5 against the local gold | No stale copy remains, so the site never contradicted itself on any one day. The kit's selftest gold (`harness/selftest/conflicts_gold.json`: 2.95% vs 3.50%) counts a stale promo copy still visible next to the new rate, which is evidence for the within-snapshot case only |
+| Expired promotions (rule 4) | An offer is expired only when no product page or rate sheet names it (promotional variants must be named as such: "rate relief", "intro", "N-month … special"). A landing page linked from a product page by the product's name is that product's owner page when no product page carries its rates | Achieve Money Market in 05 exists only on `/earn-more`, linked as "[Achieve]" from `/personal/savings-account`; the 5.125% rate-relief row survives only on `/homebuying-guidance` and is named nowhere else |
+| `as_of` semantics | Answer from the latest snapshot with taken_on ≤ as_of. A value that only a later snapshot shows as effective on or before as_of is mentioned in `conflict_note`, never in `text`; NOTES.md explains this | The site as it stood that day is what the member saw; later crawls can reveal backdated effective dates, which are worth noting but not answering with |
 
 ## Not yet specified
 
 - Phase 4: refusal retrieval-score threshold (calibrate on dev probes).
-- Phase 5: whether the hidden gold counts cross-snapshot changes as conflicts — unknowable;
-  mitigated by ranking and the cap.
+- Phase 5: whether the hidden gold counts pure cross-snapshot changes (no stale copy left) as
+  conflicts — unknowable; the kit's selftest gold only shows the within-snapshot stale-copy case.
+  Mitigated by ranking and the cap.
 
 ## Assumptions (correct before execution starts)
 
@@ -359,7 +370,7 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | --- | --- |
 | 0 Setup and ground truth | done 2026-11-17 (invariants 3/3; 22 topics traced; starter dev eval final 0.0776) |
 | 1 Auto loans vertical slice | done 2026-11-17 (public 0.1783, dev 0.2304; dup-016/017 and auto as_of pass; 5.39% conflict emitted) |
-| 2 Every rate table | not started |
+| 2 Every rate table | done 2026-11-17 (public 0.5736, dev 0.6678; 0 trap hits; tier_disambiguation 1.00; rate paraphrase groups all agree; conflicts 16/24 matched) |
 | 3 Entities and branches | not started |
 | 4 Long tail and honesty | not started |
 | 5 Conflicts curation | not started |

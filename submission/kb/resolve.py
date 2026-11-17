@@ -10,8 +10,12 @@ def overlap(a: Fact, b: Fact) -> float:
     return min(a.hi, b.hi) - max(a.lo, b.lo)
 
 
+def slot(f: Fact) -> tuple:
+    return (f.family, f.variant, f.metric, f.term)
+
+
 def same_slot(a: Fact, b: Fact) -> bool:
-    return (a.family, a.metric, a.term) == (b.family, b.metric, b.term) and overlap(a, b) >= 0
+    return slot(a) == slot(b) and overlap(a, b) >= 0
 
 
 def rank(f: Fact) -> tuple:
@@ -37,17 +41,9 @@ def resolve(cands: list[Fact]) -> Group | None:
     return g
 
 
-def lookup(
-    facts: list[Fact], family: str, metric: str, term: int | None, point: float
-) -> Group | None:
-    """Resolve the value for one point (e.g. a model year) of one product slot."""
-    return resolve(
-        [
-            f
-            for f in facts
-            if (f.family, f.metric, f.term) == (family, metric, term) and f.lo <= point <= f.hi
-        ]
-    )
+def lookup(facts: list[Fact], key: tuple, point: float) -> Group | None:
+    """Resolve the value at one point (a model year, a balance) of one slot (see slot())."""
+    return resolve([f for f in facts if slot(f) == key and f.lo <= point <= f.hi])
 
 
 def groups(facts: list[Fact]) -> list[Group]:

@@ -10,26 +10,30 @@ OWNER_URL = "https://www.dupaco.com/personal/loans/auto-motorcycle-loans"
 RATES = "https://www.dupaco.com/rates"
 SWITCH = "https://www.dupaco.com/switch-and-earn"
 CHECKING = "https://www.dupaco.com/personal/checking-accounts"
+KEY60 = ("auto", "", "APR", 60)
 
 
 def fact(
     url, label, rng, term, value, eff, sid="05", tier=OWNER, kind="product", fetched="2026-09-28"
 ):
     return Fact(
-        "auto",
-        "APR",
-        term,
-        rng[0],
-        rng[1],
-        value,
-        label,
-        url,
-        kind,
-        tier,
-        eff,
-        fetched + "T00:00:00Z",
-        sid,
-        label,
+        family="auto",
+        variant="",
+        metric="APR",
+        term=term,
+        lo=rng[0],
+        hi=rng[1],
+        value=f"{value:.2f}%",
+        product="Auto & Motorcycle Loan",
+        label=label,
+        minimum="",
+        url=url,
+        kind=kind,
+        tier=tier,
+        effective=eff,
+        fetched_at=fetched + "T00:00:00Z",
+        snapshot_id=sid,
+        quote=label,
     )
 
 
@@ -63,18 +67,18 @@ LATEST = [
 
 
 def test_authority_beats_landing_page():
-    g = lookup(LATEST, "auto", "APR", 60, 2025)
-    assert g.winner.value == 5.39
-    assert [f.value for f in g.losers] == [5.34]
+    g = lookup(LATEST, KEY60, 2025)
+    assert g.winner.value == "5.39%"
+    assert [f.value for f in g.losers] == ["5.34%"]
 
 
 def test_cite_prefers_owner_page_then_rate_sheet():
-    g = lookup(LATEST, "auto", "APR", 60, 2025)
+    g = lookup(LATEST, KEY60, 2025)
     assert [f.url for f in cite(g)] == [OWNER_URL, RATES]
 
 
 def test_model_year_moves_tier_when_labels_drift():
-    assert lookup(LATEST, "auto", "APR", 60, 2023).winner.value == 5.64
+    assert lookup(LATEST, KEY60, 2023).winner.value == "5.64%"
 
 
 def test_same_tier_later_effective_date_wins():
@@ -90,14 +94,14 @@ def test_same_tier_later_effective_date_wins():
     newer = fact(
         CHECKING, "2023-26 Model Year", (2023, 2026), 60, 5.19, date(2026, 5, 1), tier=OTHER_PRODUCT
     )
-    assert lookup([older, newer], "auto", "APR", 60, 2025).winner.value == 5.19
+    assert lookup([older, newer], KEY60, 2025).winner.value == "5.19%"
 
 
 def test_groups_match_stale_rows_by_largest_overlap():
     gs = {g.winner.label: g for g in groups(LATEST)}
     assert set(gs) == {"2024-27 Model Year", "2021-23 Model Year"}
-    assert [f.value for f in gs["2024-27 Model Year"].losers] == [5.34]
-    assert [f.value for f in gs["2021-23 Model Year"].losers] == [5.59]
+    assert [f.value for f in gs["2024-27 Model Year"].losers] == ["5.34%"]
+    assert [f.value for f in gs["2021-23 Model Year"].losers] == ["5.59%"]
     # equal tier, date and fetch time: the owner page wins, the rate sheet supports it
     assert gs["2024-27 Model Year"].winner.url == OWNER_URL
     assert [f.url for f in gs["2024-27 Model Year"].support] == [RATES]
@@ -122,4 +126,4 @@ def test_snapshot_selection_and_change_log():
     assert led.at("2026-09-28") is s5
     assert led.at("2026-05-01") is None
     (c,) = [c for c in changes(led) if c.term == 60]
-    assert (c.old.value, c.new.value, c.label) == (5.19, 5.39, "2024-27 Model Year")
+    assert (c.old.value, c.new.value, c.label) == ("5.19%", "5.39%", "2024-27 Model Year")

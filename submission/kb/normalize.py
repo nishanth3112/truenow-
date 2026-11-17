@@ -102,3 +102,20 @@ def term_months(label: str) -> int | None:
 def percent(cell: str) -> float | None:
     m = re.search(r"(\d+(?:\.\d+)?)\s*%", cell)
     return float(m[1]) if m else None
+
+
+def fmt_pct(x: float) -> str:
+    """At least two decimals, more only when printed: 7.13 -> '7.13%', 6.125 -> '6.125%'."""
+    s = f"{x:.3f}".rstrip("0")
+    return s + "0" * (2 - len(s.split(".")[1])) + "%"
+
+
+def rate_value(cell: str) -> str | None:
+    """A rate cell starts with its number: '5.39% APR' -> '5.39%', '12.50% - 19.50% APR' ->
+    '12.50%-19.50%', '2.90% APR for 6 mos. (after that ...)' -> '2.90%'. Prose cells that merely
+    mention a rate ('- Up to 3.00% APY on your balance') are not rate cells."""
+    m = re.match(r"\s*(\d+(?:\.\d+)?)\s*%?\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*%", clean_text(cell))
+    if m:
+        return f"{fmt_pct(float(m[1]))}-{fmt_pct(float(m[2]))}"
+    m = re.match(r"\s*(\d+(?:\.\d+)?)\s*%", clean_text(cell))
+    return fmt_pct(float(m[1])) if m else None

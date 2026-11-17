@@ -377,6 +377,15 @@ HELDOUT = [
         ["8.50%"],
         [],
     ),
+    (
+        "ho-23",
+        "What does the Achieve Money Market account pay?",
+        "Introductory 4.00% dividend rate (3.66% APY) for the first 6 months, then 3.20% dividend "
+        "rate (3.25% APY); $25,000 to open. Only on /earn-more (linked from the savings page).",
+        ["4.00%", "3.66%", "25,000"],
+        [],
+        [f"{D}/earn-more"],
+    ),
 ]
 
 

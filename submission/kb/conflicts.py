@@ -12,11 +12,19 @@ TIER_NAME = {
     PDF: "a PDF",
     LANDING: "a landing or calculator page",
 }
-FAMILY_NAME = {"auto": "Auto loan"}
+# A row's rate and APR (or dividend and APY) move together; one conflict per row is enough.
+REPORTED_METRICS = {"APR", "APY"}
 
 
 def _when(f: Fact) -> str:
     return f"effective {f.effective:%m/%d/%Y}" if f.effective else "no effective date"
+
+
+def topic(w: Fact) -> str:
+    parts = [f"{w.product} {w.metric}", w.label]
+    if w.term and w.family != "mortgage":  # mortgage labels already name the term
+        parts.append(f"{w.term} months")
+    return ", ".join(p for p in parts if p)
 
 
 def conflicts(ledger: Ledger) -> list[Conflict]:
@@ -24,10 +32,9 @@ def conflicts(ledger: Ledger) -> list[Conflict]:
         return []
     out = []
     for g in groups(ledger.snapshots[-1].facts):
-        if not g.losers:
-            continue
         w = g.winner
-        values = list(dict.fromkeys(f"{f.value:.2f}%" for f in [w, *g.losers]))
+        if not g.losers or w.metric not in REPORTED_METRICS:
+            continue
         lost = "; ".join(
             dict.fromkeys(
                 f"{f.url} ({TIER_NAME.get(f.tier, 'a release')}, {_when(f)})" for f in g.losers
@@ -35,10 +42,10 @@ def conflicts(ledger: Ledger) -> list[Conflict]:
         )
         out.append(
             Conflict(
-                topic=f"{FAMILY_NAME[w.family]} {w.metric}, {w.label}, {w.term} months",
-                values=values,
+                topic=topic(w),
+                values=list(dict.fromkeys(f.value for f in [w, *g.losers])),
                 sources=[Source(f.url, f.snapshot_id, f.quote) for f in [*cite(g), *g.losers]],
-                resolution=f"{w.value:.2f}%",
+                resolution=w.value,
                 reason=f"{TIER_NAME[w.tier].capitalize()} ({_when(w)}) outrank {lost}.",
             )
         )
