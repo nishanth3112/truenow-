@@ -13,8 +13,8 @@ Snapshots: 01 = 2026-05-12, 02 = 05-19, 03 = 06-09, 04 = 08-27, 05 = 09-28.
    Tier B: other product pages that carry a copy of the table (`/personal/checking-accounts` in
    01–04 carries old auto, mortgage, HELOC, card and personal-loan tables; `/personal/loans/home-equity`
    carries a refinance table; `/personal/savings/holiday-club-account/` in 05 carries the whole savings sheet).
-   Tier C: landing pages and calculators (`/switch-and-earn`, `/calculators/*`, `/homebuying-guidance`,
-   `/mortgage-refi`, `/*-lp`). Tier D: PDFs. Tier E: blog, `/learn/*` articles, newsroom.
+   Tier C: PDFs. Tier D: landing pages and calculators (`/switch-and-earn`, `/calculators/*`,
+   `/homebuying-guidance`, `/mortgage-refi`, `/*-lp`). Tier E: blog, `/learn/*` articles, newsroom.
    Exception: `/learn/master-your-money/homeownership/` in 05 carries the current mortgage table
    (eff 09/25/2026), identical to the owner page; tier E only loses on a disagreement.
 3. **Same tier → later effective date wins**, then later fetched_at. The effective date belongs to

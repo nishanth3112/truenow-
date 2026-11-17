@@ -358,7 +358,7 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | Phase | Status |
 | --- | --- |
 | 0 Setup and ground truth | done 2026-11-17 (invariants 3/3; 22 topics traced; starter dev eval final 0.0776) |
-| 1 Auto loans vertical slice | not started |
+| 1 Auto loans vertical slice | done 2026-11-17 (public 0.1783, dev 0.2304; dup-016/017 and auto as_of pass; 5.39% conflict emitted) |
 | 2 Every rate table | not started |
 | 3 Entities and branches | not started |
 | 4 Long tail and honesty | not started |
