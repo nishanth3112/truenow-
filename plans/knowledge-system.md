@@ -38,13 +38,16 @@ on a hidden question set: accuracy 55%, conflicts 15%, consistency 15%, speed 15
 - Snapshots: 637 / 634 / 635 / 683 / 705 pages; 722 unique URLs, 621 present in all five.
   A snapshot is cumulative: pages not re-fetched keep their old copy (`/switch-and-earn` in the
   2026-09-28 snapshot has fetched_at 2026-06-09).
-- Latest snapshot: 38 pages carry markdown tables with `%` values; 31 carry "effective as of" text.
+- Latest snapshot: 38 pages carry markdown tables with `%` values; 29 carry "effective as of" text.
   Rate questions are a structured-extraction problem over a small page set.
 - Page-level diffing is useless: 615 of 633 shared pages changed between 01 and 02, but e.g.
   `/personal/loans/student-loans` differs only by six chat-widget lines. Diff facts, not pages.
 - Trap values that appear in **no** snapshot: routing 271176899, `9.9%`,
   `info.dupaco.com/certificate_account_rates`, `info.dupaco.com/how_to_join`,
-  `/locations/branch-hours`, `3% APY`. They catch answers drawn from model memory.
+  `/locations/branch-hours`, `6.7%`, and "Jump Start" / "up to 0.35%". They catch answers drawn
+  from model memory.
+- `3% APY` does exist, and is stale: 1st Rate Checking paid 3.00% APY on $5,000–$24,999.99 in
+  snapshots 01–02 (2.50% from 03), and a business checking promo said "up to 3.00% APY" in 01–02.
 - Same-number-different-product: `0.35%` on `/personal/savings-account` is Investor's Choice
   Money Market ($25,000–$99,999.99) and Health Savings Account ($25,000+), not Share Savings.
 - Tier labels drift: auto table went from "2023-26 Model Year" to "2024-27 Model Year";
@@ -89,13 +92,17 @@ Currency rules (tuned in Phase 0 traces, then frozen in NOTES.md):
 1. `as_of` → latest snapshot with taken_on ≤ as_of; before 2026-05-12 → refuse.
 2. Authority: product owner page or rate sheet > other product pages > PDFs > calculators and
    landing pages > blog and newsroom.
-3. Same tier: later effective date wins, then later fetched_at.
-4. Dated press releases, blog posts and expired promotions never supply a current value; they may
-   answer historical questions.
+3. Same tier: later effective date wins, then later fetched_at. A table's effective date is the
+   first "Rates (are) effective (as of) D" line after the table (footnotes follow tables); formats
+   M/D/YYYY, MM/DD/YYYY and MM/DD/YY.
+4. Expired promotions never supply a current value. Newsroom and blog releases may answer counts,
+   recognitions, hours, closures and program facts, newest publish date first; never rates. Hours
+   always name the branch they describe.
 5. Qualifiers (term, model-year range, balance tier, loan amount, purchase/refinance, APR/APY/
    dividend rate, personal/business, standard/jumbo/special) are part of the fact key.
 6. Missing qualifier: lead tier plus the range within the same product, then ask which one;
    never values from another product.
+7. Cite the highest-tier page that holds the winning value.
 
 ## Phases
 
@@ -108,7 +115,7 @@ starter's dev-eval baseline is logged.
   unchanged; zips, PDF and unpacked snapshots ignored; `submission/` holds a copy of the starter
   `solution.py`, an exact-pinned `requirements.txt` and a stub `NOTES.md`; no `pyproject.toml` or
   `uv.lock` anywhere in the repo.
-- Verification command: `uv venv --python 3.11 && uv pip install -r requirements-dev.txt && uv run pytest -q tests/test_repo_invariants.py`
+- Verification command: `uv venv --python 3.11 --allow-existing && uv pip install -r requirements-dev.txt && uv run pytest -q tests/test_repo_invariants.py`
   and `git ls-files | grep -E '^snapshots/0|^snapshots_zip/|\.zip$|\.pdf$|pyproject\.toml|uv\.lock'` returns nothing
   (anchored, because `harness/selftest/snapshots/` holds the kit's own synthetic fixtures and stays committed).
 - Files likely touched: `submission/requirements.txt` (runtime: `openai==<exact>`),
@@ -149,7 +156,11 @@ conflict is emitted with resolution 5.39%.
 
 #### Step 1.1: Ingest core (Size: M)
 - Acceptance criteria: URL canonicalization and noise stripping; page kind/tier/date extraction;
-  table parser maps headers, strips footnote markers (`5.39% APR1` → 5.39% APR).
+  table parser maps headers, strips footnote markers (`5.39% APR1` → 5.39% APR); normalize
+  non-breaking spaces; strip glued footnote digits (`0.15%1`, `10.49%1`); take the product from the
+  nearest short line above product-less tables (a heading or a bare tab label such as
+  `Investor's Choice`); parse ranges (model years, balances, loan amounts with or without commas,
+  en dash or hyphen).
 - Verification command: `uv run pytest -q tests/test_tables.py tests/test_normalize.py tests/test_pages.py`.
 - Files likely touched: `submission/kb/normalize.py`, `submission/kb/pages.py`, `submission/kb/tables.py`.
 - Test seams: unit tests on small synthetic markdown fixtures (never real page dumps).
@@ -205,7 +216,8 @@ Verified when: entity_attribution and branch_info items pass and the Mullan Aven
 
 #### Step 3.2: Branches (Size: M)
 - Acceptance criteria: addresses, lobby and drive-up schedules (general question → typical
-  schedule + variants + ask which branch), branch count, closures with dates and alternatives.
+  schedule + variants + ask which branch), branch count, closures with dates and alternatives;
+  ignore the crawl-time Open/Closed status on `/contact`.
 - Verification command: dev eval; check dup-064, -065, -066, -068, -073, -074, -075, -076, -102, -104.
 - Blocked by: 3.1.
 
@@ -239,8 +251,9 @@ API key, and the LLM path is kept only if it raises dev qa net of speed and cons
   regardless); 6 s timeout with `max_retries=0` (the SDK retries by default,
   which would multiply the worst case) then extractive fallback; no tools passed to the API (no
   web search or fetch); prompt answers only
-  from excerpts or returns NOT_FOUND; number guard rejects any number absent from the excerpts and
-  question; in-memory cache keyed by (normalized question, snapshot_id); `KB_USE_LLM=0` disables.
+  from excerpts or returns NOT_FOUND; number guard: every number in an LLM answer must
+  appear in the question or in excerpts from the resolved snapshot, and must not equal a value the
+  resolver marked as superseded for the same product; in-memory cache keyed by (normalized question, snapshot_id); `KB_USE_LLM=0` disables.
 - Verification command: `uv run pytest -q tests/test_llm_guard.py tests/test_no_network.py`, then dev eval with and without
   the key; both logged.
 - Blocked by: 4.2.
@@ -308,13 +321,15 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | Ground truth | `must_include` / `must_not_include` over `expected_answer` prose | Prose disagrees with data (dup-011) |
 | Scope | Exactly the assignment PDF; demo and video dropped | User decision 2026-11-17 (reverses the 2026-11-16 demo decision) |
 | Build environment | Claude Code locally | User decision 2026-11-16; network, git history, Python 3.11 testing |
+| Branch hours source | Newsroom branch-opening releases only | Phase 0 traces: `/contact` shows only crawl-time Open/Closed status and no locations pages exist (`dev/TRACES.md` §14) |
+| `/rates` vs product owner page | Same tier; later effective date wins | They agree in every snapshot except one APR row in 03, where `/rates` (eff 06/08/2026) is newer than the owner page (06/04/2026) |
+| Mortgage headline | Purchase by default: the $100k tier plus the range up to the top tier, and the 15-year rate | 05: 30-yr 7.13% ($100k) to 7.25% (up to $832,750), 15-yr 6.75% / 6.88% APR; 6.037% is a stale landing page, 6.7% is in no snapshot |
+| Rule 4 (releases) | Releases answer counts, recognitions, hours, closures and program facts, newest publish date first; never rates | Branch count, Forbes, hours, Hy-Vee closure, Home$tart and VTO exist only in releases (Phase 0 traces) |
+| Lint config | `ruff.toml` (py311, line length 100, rules E, F, I, B, UP) | No `pyproject.toml` allowed; a repo config stops the user's global ruff config from applying |
+| Local conflicts gold | `dev/conflicts_gold_local.json` is frozen; it changes only with new `dev/TRACES.md` evidence, and each change is logged here | Keeps the conflicts pillar a fixed target instead of being tuned to the system |
 
 ## Not yet specified
 
-- Phase 0: where lobby and drive-up hours live (not on `/contact`).
-- Phase 1–2: precedence when `/rates` and the product owner page disagree in the same snapshot.
-- Phase 2: mortgage headline rule — dup-009 needs 7.13 and 7.25; dup-011 forbids 6.7% and
-  6.037%, whose source pages are not traced yet.
 - Phase 4: refusal retrieval-score threshold (calibrate on dev probes).
 - Phase 5: whether the hidden gold counts cross-snapshot changes as conflicts — unknowable;
   mitigated by ranking and the cap.
@@ -342,7 +357,7 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 
 | Phase | Status |
 | --- | --- |
-| 0 Setup and ground truth | not started |
+| 0 Setup and ground truth | done 2026-11-17 (invariants 3/3; 22 topics traced; starter dev eval final 0.0776) |
 | 1 Auto loans vertical slice | not started |
 | 2 Every rate table | not started |
 | 3 Entities and branches | not started |
