@@ -1,0 +1,24 @@
+# Kit data: licensed for this event only, never commit
+snapshots_zip/
+snapshots/0*/
+*.zip
+*.pdf
+
+# Scorer and dev outputs
+results/
+
+# Python and uv
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets
+.env
+.env.*
+
+# Local agent config (CLAUDE.md is committed)
+.claude/
+
+.DS_Store
