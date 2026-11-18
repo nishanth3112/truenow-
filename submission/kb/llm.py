@@ -1,6 +1,7 @@
-"""Optional OpenAI composer for long-tail answers. Off unless OPENAI_API_KEY is set (and
-KB_USE_LLM is not "0"). Every number in its answer must appear in the question or the excerpts
-and must not be a value the resolver superseded; otherwise the caller keeps the extractive answer.
+"""Optional OpenAI composer for long-tail answers. Opt-in and unevaluated: it runs only when
+KB_USE_LLM=1 and OPENAI_API_KEY is set. Every number in its answer must appear in the question or
+the excerpts and must not be a value the resolver superseded; otherwise the caller keeps the
+extractive answer.
 """
 
 import os
@@ -23,7 +24,8 @@ _no_temperature = False  # set if the model rejects temperature on the first cal
 
 
 def enabled() -> bool:
-    return bool(os.environ.get("OPENAI_API_KEY") or _client) and os.environ.get("KB_USE_LLM") != "0"
+    """Opt-in: the extractive path is the measured default (decision log, 2026-11-18)."""
+    return os.environ.get("KB_USE_LLM") == "1" and bool(os.environ.get("OPENAI_API_KEY") or _client)
 
 
 def numbers(text: str) -> set[float]:

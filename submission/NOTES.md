@@ -45,13 +45,12 @@ different numbers. Each has the winning value and the reason.
 
 ## API keys
 
-None are required. With no key the system runs fully offline, and that is how it was measured.
+**No key is needed.** The system runs fully offline, and every score was measured that way.
 
-Optionally it uses a **paid API: OpenAI**, model `gpt-6-luna` by default, with the key read from
-`OPENAI_API_KEY`. The model is used only to word long-tail answers from retrieved excerpts. It gets
-no tools and a 6-second timeout, and is not retried (except once, without the temperature setting,
-if the model rejects it). Every number in its answer must appear in the
-question or the excerpts, and must not be a value the resolver ruled stale; otherwise the
-extracted answer is used. Settings: `KB_USE_LLM=0` turns it off; `KB_LLM_MODEL` and
-`KB_LLM_EFFORT` (default `none`) change the model and reasoning effort. The model path has not
-been evaluated with a key yet.
+There is an optional, opt-in model path that is **not evaluated**: it uses a **paid API, OpenAI**
+(model `gpt-6-luna` by default) and runs only when both `KB_USE_LLM=1` and `OPENAI_API_KEY` are
+set. A key alone does not turn it on. It only words long-tail answers from retrieved excerpts,
+gets no tools and a 6-second timeout, and is not retried (except once, without the temperature
+setting, if the model rejects it). Every number in its answer must appear in the question or the
+excerpts, and must not be a value the resolver ruled stale; otherwise the extracted answer is
+used. `KB_LLM_MODEL` and `KB_LLM_EFFORT` (default `none`) change the model and reasoning effort.

@@ -23,7 +23,7 @@ class Fake:
 
 @pytest.fixture(autouse=True)
 def fresh(monkeypatch):
-    monkeypatch.delenv("KB_USE_LLM", raising=False)
+    monkeypatch.setenv("KB_USE_LLM", "1")
     llm._cache.clear()
     llm._no_temperature = False
     yield
@@ -66,3 +66,11 @@ def test_temperature_retry_and_disable(monkeypatch):
     llm._cache.clear()
     monkeypatch.setenv("KB_USE_LLM", "0")
     assert compose() is None
+
+
+def test_opt_in_only(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.delenv("KB_USE_LLM", raising=False)
+    assert not llm.enabled()  # a key alone does not turn the model on
+    monkeypatch.setenv("KB_USE_LLM", "1")
+    assert llm.enabled()

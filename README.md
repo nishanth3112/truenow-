@@ -22,7 +22,8 @@ assignment. How it works, how it decides what is current, and API keys: see
 python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
 ```
 
-No API key is needed. `OPENAI_API_KEY` is optional (see the notes).
+No API key is needed. An optional, unevaluated model path runs only when both `KB_USE_LLM=1` and
+`OPENAI_API_KEY` are set (see the notes).
 
 ## Development
 
