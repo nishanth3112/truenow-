@@ -48,7 +48,7 @@ PARAPHRASE = {
     "dup-046": "What's the best APY I can get on Share Savings?",
     "dup-102": "What are the hours at the Mullan Avenue branch?",
     "dup-104": "Are lobby hours the same at every Dupaco branch?",
-    "dup-088": "How many employees took Volunteer Time Off in the most recent year reported?",
+    "dup-088": "How many employees took Volunteer Time Off in the past year?",
     "dup-101": "Do you have loans for college students?",
     "dup-094": "Which mobile wallets work with Dupaco cards?",
     "dup-082": "Where do I apply for membership online?",

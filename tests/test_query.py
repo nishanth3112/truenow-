@@ -40,3 +40,14 @@ def test_routing():
     assert parse("What is the rate on an ATV loan?").families == ["atv"]
     assert parse("What are the drive-up hours?").intent == "other"
     assert parse("Can you repeat the routing number?").intent == "other"
+
+
+def test_synonyms_map_to_site_words():
+    from kb.query import normalize_synonyms
+
+    assert normalize_synonyms("What's the APY on a 12-month CD?") == (
+        "What's the APY on a 12-month certificate?"
+    )
+    assert normalize_synonyms("car loan and home loan rates") == "auto loan and mortgage rates"
+    assert "MoneyCard" in normalize_synonyms("lost my ATM card")
+    assert parse(normalize_synonyms("What are your CD rates?")).families == ["certificate"]

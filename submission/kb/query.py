@@ -67,6 +67,24 @@ VARIANT_WORDS = [
 ]
 
 
+# Member wording -> the site's own words, applied before routing and before the long-tail
+# unknown-word refusal check (a synonym the site never uses is not an unknown topic).
+SYNONYMS = [
+    (r"\bcds\b", "certificates"),
+    (r"\bcd\b", "certificate"),
+    (r"\bcar loans?\b", "auto loan"),
+    (r"\bhome loans?\b", "mortgage"),
+    (r"\b(atm|check) cards?\b", "debit card"),
+    (r"\bdebit cards?\b", "debit card MoneyCard"),
+]
+
+
+def normalize_synonyms(question: str) -> str:
+    for pat, repl in SYNONYMS:
+        question = re.sub(pat, repl, question, flags=re.I)
+    return question
+
+
 @dataclass(frozen=True)
 class Query:
     intent: str  # "rate", "rate_link" or "other"

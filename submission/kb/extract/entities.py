@@ -115,19 +115,29 @@ def closure_claims(page: Page, body: str, sid: str) -> list[Claim]:
     return out
 
 
+STATED_YEAR = re.compile(r"\b(?:in|during|for)\s+((?:19|20)\d\d)\b", re.I)
+LEAD_YEAR = re.compile(r"^\s*In ((?:19|20)\d\d)\b")
+
+
 def sentence_claims(page: Page, body: str, sid: str) -> list[Claim]:
-    """Release sentences that state a number or an ordinal: counts and recognitions."""
+    """Release sentences that state a number or an ordinal: counts and recognitions. key is the
+    year the figure is for: the year the sentence states, else that of the nearest preceding
+    'In YYYY' lead-in ('In 2024 alone:' above a bullet list), else ""."""
     published = publish_date(body)
-    out = []
+    out, context = [], ""
     # bullets and paragraphs are separate statements; sentences are split inside them
     for block in re.split(r"\n\s*[-*•]\s+|\n\s*\n", _plain(body).replace("**", "")):
         text = re.sub(r"\s+", " ", block).strip()
+        lead = LEAD_YEAR.match(text)
+        context = lead[1] if lead else context
         for s in re.split(r"(?<=[.!?])\s+(?=[A-Z“\"])", text):
             s = s.strip()
             if 20 < len(s) < 400 and (
                 re.search(r"\d", s) or re.search(rf"\b({ORDINALS})\b", s, re.I)
             ):
-                out.append(Claim("sentence", "", "", s, page.url, published, sid, s))
+                stated = STATED_YEAR.search(s)
+                year = stated[1] if stated else context
+                out.append(Claim("sentence", "", year, s, page.url, published, sid, s))
     return out
 
 

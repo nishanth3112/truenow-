@@ -104,3 +104,60 @@ def test_addresses_identifiers_and_refusals():
     mullan = entity_answer(sf, "What are the lobby hours at the Mullan Avenue branch?", None)
     assert mullan.confident is False
     assert matches(["sycamore", "street"], "1465 Sycamore St., Dubuque")
+
+
+VTO_2024 = """# Volunteering pays off
+
+April 19, 2024
+
+Logging over 7,200 volunteer hours in 2023, Dupaco employees helped.
+
+In 2023 alone:
+
+- Nearly 700 Dupaco employees volunteered 7,260 hours.
+- 294 Dupaco employees used a new paid benefit in 2023 called Volunteer Time Off.
+"""
+VTO_2025 = """# Volunteering pays off again
+
+April 21, 2025
+
+In 2024 alone:
+
+- 256 Dupaco employees used a paid benefit in 2024 called Volunteer Time Off.
+- Dupaco's 602 employees volunteered a total of 6,187 hours.
+"""
+
+
+def yearly() -> SnapshotFacts:
+    sf = snapshot()
+    for path, md in [("/newsroom/vto-1", VTO_2024), ("/newsroom/vto-2", VTO_2025)]:
+        url = "https://www.dupaco.com" + path
+        sf.pages[url] = Page(url, path, "release", "t", md, "2026-09-28T00:00:00Z")
+    sf.claims = []
+    entity_claims(sf)
+    return sf
+
+
+def test_named_year_gets_that_years_figure_only():
+    sf = yearly()
+    a = entity_answer(sf, "How many employees used Volunteer Time Off in 2023?", None).text
+    assert "294" in a and "256" not in a
+    hours = entity_answer(sf, "How many volunteer hours did employees log in 2023?", None).text
+    assert "7,260" in hours and "6,187" not in hours  # exact figure beats "over 7,200"
+
+
+def test_relative_year_the_site_does_not_report():
+    a = entity_answer(yearly(), "How many employees used Volunteer Time Off last year?", None).text
+    assert a.startswith("The site doesn't give a 2025 figure.")
+    assert "In 2024: 256" in a and "In 2023: 294" in a
+
+
+def test_reported_relative_year_most_recent_and_current_counts():
+    sf = yearly()
+    then = entity_answer(sf, "How many volunteer hours did employees give last year?", "2025-06-01")
+    assert "6,187" in then.text and "7,260" not in then.text
+    latest = entity_answer(
+        sf, "How many employees used VTO in the most recent year reported?", None
+    )
+    assert "256" in latest.text and "294" not in latest.text
+    assert "22 branch office" in entity_answer(sf, "How many branches does Dupaco have?", None).text

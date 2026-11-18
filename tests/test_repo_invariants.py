@@ -22,6 +22,14 @@ KIT_SHA256 = {
 }
 
 
+# dev/fresh_eval.jsonl is frozen: written once (2026-11-18) before any code change it measures.
+FRESH_SHA256 = "4c17d712d21e35aa2a27269ff115b604de32f9c895a7973ff3a061e4c0371e64"
+
+
+def test_fresh_eval_frozen():
+    assert hashlib.sha256((ROOT / "dev/fresh_eval.jsonl").read_bytes()).hexdigest() == FRESH_SHA256
+
+
 def _tracked():
     return subprocess.run(
         ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True

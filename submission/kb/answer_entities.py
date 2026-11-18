@@ -8,6 +8,7 @@ from datetime import date, datetime
 from contract import Answer, Source
 
 from kb.facts import Claim, SnapshotFacts
+from kb.query import DATE_PHRASE
 
 REFUSAL = "It isn't listed; please contact us."
 STOP = set(
@@ -153,24 +154,85 @@ def content_words(text: str) -> set[str]:
     return {stem(w) for w in re.findall(r"[a-z]+", text.lower()) if w not in STOP}
 
 
-def count_answer(sf: SnapshotFacts, question: str) -> Answer | None:
-    """'How many X ...': the release sentence that puts a number on X and shares the most other
-    words with the question; ties go to the newest release (rule 4)."""
-    m = re.search(r"how many\s+(?:dupaco\s+)?([a-z-]+)", question, re.I)
+APPROX = re.compile(r"\b(over|nearly|about|almost|approximately|roughly|more than)\s+$", re.I)
+RELATIVE = [(r"\b(last|previous|past) year\b", -1), (r"\bthis year\b", 0)]
+
+
+def clause(sentence: str, limit: int = 140) -> str:
+    """The sentence up to its first clause break after `limit` characters at most."""
+    if len(sentence) <= limit:
+        return sentence
+    cut = max(sentence.rfind(", ", 0, limit), sentence.rfind(" (", 0, limit))
+    return sentence[:cut] if cut > 40 else sentence[:limit].rsplit(" ", 1)[0]
+
+
+def head_noun(question: str) -> str | None:
+    """'how many volunteer hours ...' -> 'hour'; 'how many Dupaco employees used' -> 'employe'."""
+    m = re.search(r"how many\s+((?:[\w-]+\s+){0,2}[\w-]+)", question, re.I)
     if not m:
         return None
-    head = stem(m[1].lower())
-    others = content_words(question) - {head, "many", "how"}
-    # a count, not a year ("In 2025, Dupaco employees ...")
+    words = [w.lower() for w in m[1].split() if w.lower() not in ("dupaco", "dupaco's")]
+    plural = next((w for w in words if w.endswith("s") and not w.endswith("ss")), None)
+    return stem(plural or words[0]) if words else None
+
+
+def count_answer(sf: SnapshotFacts, question: str, as_of: str | None) -> Answer | None:
+    """'How many X ...': release sentences that put a number on X. A named year gets that year's
+    figure only; a relative year the site does not report gets the two latest reported years;
+    otherwise the newest release wins (rule 4). Ties go to the sentence sharing the most words
+    with the question, then to exact figures over approximate ones ('over 7,200')."""
+    q = DATE_PHRASE.sub(" ", question)
+    head = head_noun(q)
+    if not head:
+        return None
+    others = content_words(q) - {head, "many", "how"}
     number = re.compile(
-        rf"\b(?!(?:19|20)\d\d\b)\d[\d,]*\**\s+(?:[\w-]+\s+){{0,2}}{re.escape(head)}", re.I
+        rf"(?<![\d,])(?!(?:19|20)\d\d\b)\d[\d,]*\**\s+(?:[\w-]+\s+){{0,2}}{re.escape(head)}", re.I
     )
-    cands = [c for c in sf.claims if c.kind == "sentence" and number.search(c.value)]
+    cands = []
+    for c in sf.claims:
+        m = number.search(c.value) if c.kind == "sentence" else None
+        if m:
+            exact = not APPROX.search(c.value[: m.start()])
+            cands.append((len(others & content_words(c.value)), exact, c.published or date.min, c))
     if not cands:
         return None
-    best = max(cands, key=lambda c: (len(others & content_words(c.value)), c.published or date.min))
-    text = f"Per Dupaco's newsroom ({when(best)}): {best.value}"
-    return Answer(text=text, sources=cite([best]))
+    best_overlap = max(x[0] for x in cands)
+    on_topic = [x for x in cands if x[0] >= max(1, best_overlap - 1)] or cands
+
+    def answer_for(pool, one_year=False):
+        # within one year every candidate is on topic: an exact figure beats "over 7,200"
+        key = (lambda x: (x[1], x[0], x[2])) if one_year else (lambda x: x[:3])
+        best = max(pool, key=key)[3]
+        lead = f"In {best.key}: " if best.key and best.key not in best.value else ""
+        return best, f"{lead}{clause(best.value)} (Dupaco newsroom, {when(best)})"
+
+    stated = re.search(r"\b((?:19|20)\d\d)\b", q)
+    ref = int((as_of or sf.taken_on)[:4])
+    target = (
+        stated[1]
+        if stated
+        else next((str(ref + d) for pat, d in RELATIVE if re.search(pat, q, re.I)), None)
+    )
+    if re.search(r"\b(most recent|latest)\b", q, re.I) and not stated:
+        years = sorted({x[3].key for x in on_topic if x[3].key})
+        target = years[-1] if years else None
+    if target is None:
+        best, text = answer_for(cands)
+        return Answer(text=text, sources=cite([best]))
+    pool = [x for x in on_topic if x[3].key == target]
+    if pool:
+        best, text = answer_for(pool, one_year=True)
+        return Answer(text=text, sources=cite([best]))
+    years = sorted({x[3].key for x in on_topic if x[3].key}, reverse=True)[:2]
+    if not years:
+        return refuse()
+    found = [answer_for([x for x in on_topic if x[3].key == y], one_year=True) for y in years]
+    listed = "; ".join(
+        t if t.startswith("In ") else f"In {y}: {t}" for y, (_, t) in zip(years, found, strict=True)
+    )
+    text = f"The site doesn't give a {target} figure. Latest reported: {listed}"
+    return Answer(text=text, sources=cite([b for b, _ in found]))
 
 
 def recognition_answer(sf: SnapshotFacts, question: str) -> Answer | None:
@@ -205,6 +267,8 @@ def entity_answer(sf: SnapshotFacts, question: str, as_of: str | None) -> Answer
         found = closure_answer(sf, q, words, as_of)
         if found:
             return found
+    if re.search(r"\bhow many\b", q, re.I):  # "how many volunteer hours" is a count, not hours
+        return count_answer(sf, q, as_of)
     if re.search(
         r"\bhours?\b|\blobb(y|ies)\b.*\bopen\b|\bdrive.?(up|thru|through)\b.*\b(open|close)",
         q,
@@ -231,6 +295,4 @@ def entity_answer(sf: SnapshotFacts, question: str, as_of: str | None) -> Answer
         found = recognition_answer(sf, q)
         if found:
             return found
-    if re.search(r"\bhow many\b", q, re.I):
-        return count_answer(sf, q)
     return None

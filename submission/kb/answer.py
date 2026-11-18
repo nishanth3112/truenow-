@@ -13,7 +13,7 @@ from kb.facts import Fact, Ledger, SnapshotFacts
 from kb.longtail import long_tail_answer
 from kb.normalize import fmt_pct
 from kb.pages import LANDING
-from kb.query import Query, as_of_from, parse
+from kb.query import Query, as_of_from, normalize_synonyms, parse
 from kb.resolve import Group, cite, groups, lookup, slot
 
 REFUSAL = "It isn't listed; please contact us."
@@ -355,6 +355,7 @@ def auto_answer(q: Query, sf: SnapshotFacts, ledger: Ledger, as_of: str | None) 
 
 def answer(ledger: Ledger, question: str, as_of: str | None = None) -> Answer:
     as_of = as_of or as_of_from(question)  # the as_of field wins over a date in the question
+    question = normalize_synonyms(question)
     sf = ledger.at(as_of)
     if sf is None:  # rule 1: nothing before the first snapshot
         return refuse()
