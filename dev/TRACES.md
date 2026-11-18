@@ -191,8 +191,12 @@ Observed conflict patterns, all resolved by rules 2–3 with no special case:
   snapshots): FHLB Des Moines program, **up to $15,000** for first-time homebuyers.
 
 ### 19. Volunteer Time Off (dup-088)
-- `/newsroom/volunteering-pays-off-dupaco-credit-union-employees-reap-the-benefits-of-giving-back`:
-  **294** employees used VTO in 2023.
+- `/newsroom/volunteering-pays-off-dupaco-credit-union-employees-reap-the-benefits-of-giving-back`
+  (2024 release): **294** employees used VTO in 2023.
+- `/newsroom/volunteering-pays-off-dupaco-credit-union-employees-reap-the-benefits-of-giving-back-2`
+  (published 2025-04-21): **256** employees used VTO in 2024. Both releases are in all five
+  snapshots (`dev/trace.py '\d+ Dupaco employees\*?\*? used' -g`). Rule 4 (newest publish date
+  first) answers 256; the public eval item dup-088 expects 294, so it contradicts rule 4.
 
 ### 20. HELOC and home equity
 - HELOC standard **6.25% APR** all snapshots; 1.99% intro APR for 3 months in 01–03 only.

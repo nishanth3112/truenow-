@@ -33,6 +33,20 @@ class Fact:
         return float(self.value.split("%")[0])
 
 
+@dataclass(frozen=True)
+class Claim:
+    """A non-rate fact: identifier, link, address, branch hours, closure, or a dated sentence."""
+
+    kind: str  # "routing", "phone", "address", "join_url", "locator_url", "hours", "closure", ...
+    subject: str  # who it is about: a branch name, "" for site-wide facts
+    key: str  # e.g. "lobby" / "drive-up" for hours, the ISO date for closures
+    value: str
+    url: str
+    published: date | None  # release publish date (rule 4: newest first)
+    snapshot_id: str
+    quote: str
+
+
 @dataclass
 class Page:
     url: str
@@ -49,6 +63,7 @@ class SnapshotFacts:
     taken_on: str
     pages: dict[str, Page] = field(default_factory=dict)
     facts: list[Fact] = field(default_factory=list)
+    claims: list[Claim] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

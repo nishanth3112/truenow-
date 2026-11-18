@@ -19,6 +19,7 @@ if _kit:
 
 from kb.answer import answer  # noqa: E402
 from kb.conflicts import conflicts  # noqa: E402
+from kb.extract.entities import entity_claims  # noqa: E402
 from kb.extract.rates import EXTRACTORS, PAGE_EXTRACTORS, POST  # noqa: E402
 from kb.facts import Ledger, build_snapshot  # noqa: E402
 
@@ -28,7 +29,9 @@ class TrueNow:
         self.ledger = Ledger()
 
     def ingest(self, snapshot) -> None:
-        self.ledger.add(build_snapshot(snapshot, EXTRACTORS, PAGE_EXTRACTORS, POST))
+        self.ledger.add(
+            build_snapshot(snapshot, EXTRACTORS, PAGE_EXTRACTORS, [*POST, entity_claims])
+        )
 
     def answer(self, question, as_of=None):
         return answer(self.ledger, question, as_of)

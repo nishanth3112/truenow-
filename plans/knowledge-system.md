@@ -340,6 +340,9 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 
 ## Not yet specified
 
+- dup-088 (Volunteer Time Off): rule 4 (newest publish date first) answers 256 employees (2024,
+  release of 2025-04-21); the public eval expects 294 (2023, 2024 release). Following rule 4
+  until decided (`dev/TRACES.md` §19).
 - Phase 4: refusal retrieval-score threshold (calibrate on dev probes).
 - Phase 5: whether the hidden gold counts pure cross-snapshot changes (no stale copy left) as
   conflicts — unknowable; the kit's selftest gold only shows the within-snapshot stale-copy case.
@@ -371,7 +374,7 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | 0 Setup and ground truth | done 2026-11-17 (invariants 3/3; 22 topics traced; starter dev eval final 0.0776) |
 | 1 Auto loans vertical slice | done 2026-11-17 (public 0.1783, dev 0.2304; dup-016/017 and auto as_of pass; 5.39% conflict emitted) |
 | 2 Every rate table | done 2026-11-17 (public 0.5736, dev 0.6678; 0 trap hits; tier_disambiguation 1.00; rate paraphrase groups all agree; conflicts 16/24 matched) |
-| 3 Entities and branches | not started |
+| 3 Entities and branches | done 2026-11-17 (public 0.8713, dev 0.878; 0 trap hits; branch_info 0.97; Mullan refuses; dup-088 open, see Not yet specified) |
 | 4 Long tail and honesty | not started |
 | 5 Conflicts curation | not started |
 | 6 Hardening and docs | not started |

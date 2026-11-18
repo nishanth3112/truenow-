@@ -7,6 +7,7 @@ from datetime import date
 
 from contract import Answer, Source
 
+from kb.answer_entities import entity_answer
 from kb.extract.rates import YEAR_FAMILIES, named_on_product_pages
 from kb.facts import Fact, Ledger, SnapshotFacts
 from kb.normalize import fmt_pct
@@ -375,4 +376,4 @@ def answer(ledger: Ledger, question: str, as_of: str | None = None) -> Answer:
     q = parse(question)
     if q.intent in ("rate", "rate_link"):
         return rate_answer(ledger, sf, q, as_of)
-    return naive_answer(question, sf)
+    return entity_answer(sf, question, as_of) or naive_answer(question, sf)
