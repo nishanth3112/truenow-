@@ -342,6 +342,9 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | Synonyms | CD → certificate, car loan → auto loan, home loan → mortgage, ATM/check card → debit card (+ "MoneyCard"), applied to every question before routing and before the unknown-word refusal check | Member wording the site never uses is not an unknown topic |
 | Fresh eval | `dev/fresh_eval.jsonl`: 20 items written and frozen (hash in `tests/test_repo_invariants.py`) on 2026-11-18 before the changes it measures; failures seen there are reported, not patched one by one | The dev held-out split scored 1.00 against 0.55 on the fresh set: held-out ho-20 (overdraft) was in the Phase 4 refusal calibration table, so dev no longer measures generalisation |
 | Dev eval correction 2026-11-18 | dup-088-p reworded from "…in the most recent year reported?" to "…in the past year?" | Under the year-stamped rule the old wording asks for 2024 only (256), so it was no longer a paraphrase of "last year" (2025 unreported → 2024 and 2023); its copied expectation (294) did not fit its wording |
+| Pure changes between snapshots (Phase 5 decision) | Not reported | Local gold (30), cap 40: without them P 1.00, R 0.90, F1 0.947, resolution 0.90 (pillar 0.933); with them P 0.725, R 0.967, F1 0.829, resolution 0.967 (pillar 0.870); uncapped with them F1 0.773. They recover lc-14 and lc-17 but add 13 unmatched entries |
+| Dated-claim conflicts | Releases restating a branch-location count, or an "Nth time" recognition, with different numbers; the newest release resolves it | Other boilerplate counts (members, employees, assets, counties) drift with time and are not member-facing contradictions; including every repeated number phrase gave 14 unmatched entries. Criterion chosen with lc-20/lc-21 in view, so it may fit the local gold |
+| Conflict ranking and cap | Confidence: stale copy 2.0 (pure change 0.5) + 1.0 if in the newest snapshot + 0.5 if the losing page is a landing page or below; dated claims 2.5; capped at 40 | 27 conflicts emitted today, under the cap |
 | Model composer (Phase 4 decision) | Not evaluated: OPENAI_API_KEY was not set on 2026-11-18, so the six with/without-key runs were skipped; the composer stays off without a key | Keep it only if a with-key run raises held-out and fresh accuracy with 0 trap hits, consistency 1.0 and p95 ≤ 2 s |
 | `as_of` semantics | Answer from the latest snapshot with taken_on ≤ as_of. A value that only a later snapshot shows as effective on or before as_of is mentioned in `conflict_note`, never in `text`; NOTES.md explains this | The site as it stood that day is what the member saw; later crawls can reveal backdated effective dates, which are worth noting but not answering with |
 
@@ -350,8 +353,7 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 - Phase 4: whether to keep the LLM composer: needs a dev run with OPENAI_API_KEY set (none
   available yet); the no-key path is measured.
 - Phase 5: whether the hidden gold counts pure cross-snapshot changes (no stale copy left) as
-  conflicts — unknowable; the kit's selftest gold only shows the within-snapshot stale-copy case.
-  Mitigated by ranking and the cap.
+  conflicts is unknowable; they are left out on local evidence (decision log).
 
 ## Assumptions (correct before execution starts)
 
@@ -381,6 +383,6 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | 2 Every rate table | done 2026-11-17 (public 0.5736, dev 0.6678; 0 trap hits; tier_disambiguation 1.00; rate paraphrase groups all agree; conflicts 16/24 matched) |
 | 3 Entities and branches | done 2026-11-17 (public 0.8713, dev 0.878; 0 trap hits; branch_info 0.97; Mullan refuses; dup-088 open, see Not yet specified) |
 | 4 Long tail and honesty | done 2026-11-18 except the with-key dev run (no key here): public 0.9101, dev 0.9193 without a key; should_refuse 1.00; paraphrase consistency 1.0 |
-| 5 Conflicts curation | not started |
+| 5 Conflicts curation | done 2026-11-18: local conflicts F1 0.947, resolution 0.90 (27 submitted, 27 matched of 30); dev final 0.951 |
 | 6 Hardening and docs | not started |
 | 7 Submit | not started |
