@@ -336,6 +336,8 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | Conflict scope | `conflicts()` checks for contradictions within every snapshot, not only the latest | lc-13 (Platinum Visa 12.50%–19.50% vs fine print 13.00%–20.00%) exists only in 01–03; a member could have read both that day |
 | Pure changes between snapshots | Not reported by default; decided in Phase 5 against the local gold | No stale copy remains, so the site never contradicted itself on any one day. The kit's selftest gold (`harness/selftest/conflicts_gold.json`: 2.95% vs 3.50%) counts a stale promo copy still visible next to the new rate, which is evidence for the within-snapshot case only |
 | Expired promotions (rule 4) | An offer is expired only when no product page or rate sheet names it (promotional variants must be named as such: "rate relief", "intro", "N-month … special"). A landing page linked from a product page by the product's name is that product's owner page when no product page carries its rates | Achieve Money Market in 05 exists only on `/earn-more`, linked as "[Achieve]" from `/personal/savings-account`; the 5.125% rate-relief row survives only on `/homebuying-guidance` and is named nowhere else |
+| Long-tail refusal policy | Refuse when the top BM25 chunk scores below 3.0, or when the question uses a word the snapshot never uses and the chosen evidence covers under half of the question's idf mass (unseen words counted at the highest idf) | Calibrated on dev: the SWIFT-code probe has an unseen word and coverage 0.36; the answerable long-tail items have top scores ≥ 7.1 and the wordiest (no unseen word) covers 0.40, so coverage alone could not separate them |
+| Extractive composer | Best sentence (scored with its chunk heading; quoted remarks slightly lower; ties to the earliest position on the page) plus the next sentence, plus one sentence from another chunk if it adds a fifth of the question's weight | Covers definitions that span two sentences (Home$tart) and lists split across chunks (mobile wallets) |
 | `as_of` semantics | Answer from the latest snapshot with taken_on ≤ as_of. A value that only a later snapshot shows as effective on or before as_of is mentioned in `conflict_note`, never in `text`; NOTES.md explains this | The site as it stood that day is what the member saw; later crawls can reveal backdated effective dates, which are worth noting but not answering with |
 
 ## Not yet specified
@@ -343,7 +345,8 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 - dup-088 (Volunteer Time Off): rule 4 (newest publish date first) answers 256 employees (2024,
   release of 2025-04-21); the public eval expects 294 (2023, 2024 release). Following rule 4
   until decided (`dev/TRACES.md` §19).
-- Phase 4: refusal retrieval-score threshold (calibrate on dev probes).
+- Phase 4: whether to keep the LLM composer: needs a dev run with OPENAI_API_KEY set (none
+  available yet); the no-key path is measured.
 - Phase 5: whether the hidden gold counts pure cross-snapshot changes (no stale copy left) as
   conflicts — unknowable; the kit's selftest gold only shows the within-snapshot stale-copy case.
   Mitigated by ranking and the cap.
@@ -375,7 +378,7 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | 1 Auto loans vertical slice | done 2026-11-17 (public 0.1783, dev 0.2304; dup-016/017 and auto as_of pass; 5.39% conflict emitted) |
 | 2 Every rate table | done 2026-11-17 (public 0.5736, dev 0.6678; 0 trap hits; tier_disambiguation 1.00; rate paraphrase groups all agree; conflicts 16/24 matched) |
 | 3 Entities and branches | done 2026-11-17 (public 0.8713, dev 0.878; 0 trap hits; branch_info 0.97; Mullan refuses; dup-088 open, see Not yet specified) |
-| 4 Long tail and honesty | not started |
+| 4 Long tail and honesty | done 2026-11-18 except the with-key dev run (no key here): public 0.9101, dev 0.9193 without a key; should_refuse 1.00; paraphrase consistency 1.0 |
 | 5 Conflicts curation | not started |
 | 6 Hardening and docs | not started |
 | 7 Submit | not started |

@@ -1,5 +1,5 @@
 """Answer templates. Rate questions always get a resolved fact, a rule-6 listing that asks which
-tier, or a refusal; only non-rate questions reach the placeholder retrieval."""
+tier, or a refusal; other questions try entity claims, then long-tail retrieval."""
 
 import re
 from dataclasses import replace
@@ -10,13 +10,13 @@ from contract import Answer, Source
 from kb.answer_entities import entity_answer
 from kb.extract.rates import YEAR_FAMILIES, named_on_product_pages
 from kb.facts import Fact, Ledger, SnapshotFacts
+from kb.longtail import long_tail_answer
 from kb.normalize import fmt_pct
 from kb.pages import LANDING
 from kb.query import Query, as_of_from, parse
 from kb.resolve import Group, cite, groups, lookup, slot
 
 REFUSAL = "It isn't listed; please contact us."
-WORD = re.compile(r"[a-z0-9$%.]+")
 HARD_TAGS = {"jumbo", "special", "intro", "relief", "roth", "traditional", "variable", "arm"}
 HIDDEN_UNLESS_ASKED = {"intro", "relief", "refinance"}
 LIST_FAMILIES = {
@@ -216,7 +216,7 @@ def collapse_amounts(gs: list[Group], companions: dict) -> list[str]:
     return lines
 
 
-def family_rows(ledger: Ledger, sf: SnapshotFacts, q: Query, family: str):
+def family_rows(sf: SnapshotFacts, q: Query, family: str):
     """The current rows of one family that match the question, plus companion values."""
     fam_facts = [f for f in sf.facts if f.family == family]
     family_tags = {t for f in fam_facts for t in f.variant.split()}
@@ -248,7 +248,7 @@ def rate_answer(ledger: Ledger, sf: SnapshotFacts, q: Query, as_of: str | None) 
         return auto_answer(q, sf, ledger, as_of)
     texts, used, all_rows = [], [], []
     for family in q.families:
-        rows, comp = family_rows(ledger, sf, q, family)
+        rows, comp = family_rows(sf, q, family)
         if not rows:
             continue
         all_rows += rows
@@ -353,21 +353,6 @@ def auto_answer(q: Query, sf: SnapshotFacts, ledger: Ledger, as_of: str | None) 
     return Answer(text=text, sources=sources([lo]), conflict_note=stale_note([lo]))
 
 
-def naive_answer(question: str, sf: SnapshotFacts) -> Answer:
-    """Placeholder long tail for non-rate questions (replaced in Phase 4)."""
-    q = set(WORD.findall(question.lower()))
-    best, best_score = None, 0
-    for url, page in sf.pages.items():
-        for para in page.markdown.split("\n\n"):
-            s = len(q & set(WORD.findall(para.lower())))
-            if s > best_score:
-                best, best_score = (url, para.strip()), s
-    if not best:
-        return refuse()
-    url, para = best
-    return Answer(text=para[:600], sources=[Source(url=url, snapshot_id=sf.snapshot_id)])
-
-
 def answer(ledger: Ledger, question: str, as_of: str | None = None) -> Answer:
     as_of = as_of or as_of_from(question)  # the as_of field wins over a date in the question
     sf = ledger.at(as_of)
@@ -376,4 +361,4 @@ def answer(ledger: Ledger, question: str, as_of: str | None = None) -> Answer:
     q = parse(question)
     if q.intent in ("rate", "rate_link"):
         return rate_answer(ledger, sf, q, as_of)
-    return entity_answer(sf, question, as_of) or naive_answer(question, sf)
+    return entity_answer(sf, question, as_of) or long_tail_answer(sf, question)

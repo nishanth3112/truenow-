@@ -64,6 +64,7 @@ class SnapshotFacts:
     pages: dict[str, Page] = field(default_factory=dict)
     facts: list[Fact] = field(default_factory=list)
     claims: list[Claim] = field(default_factory=list)
+    index: object = None  # kb.retrieval.Index, built at ingest
 
 
 @dataclass(frozen=True)

@@ -22,6 +22,11 @@ from kb.conflicts import conflicts  # noqa: E402
 from kb.extract.entities import entity_claims  # noqa: E402
 from kb.extract.rates import EXTRACTORS, PAGE_EXTRACTORS, POST  # noqa: E402
 from kb.facts import Ledger, build_snapshot  # noqa: E402
+from kb.retrieval import Index  # noqa: E402
+
+
+def index(sf) -> None:
+    sf.index = Index(sf)
 
 
 class TrueNow:
@@ -30,7 +35,7 @@ class TrueNow:
 
     def ingest(self, snapshot) -> None:
         self.ledger.add(
-            build_snapshot(snapshot, EXTRACTORS, PAGE_EXTRACTORS, [*POST, entity_claims])
+            build_snapshot(snapshot, EXTRACTORS, PAGE_EXTRACTORS, [*POST, entity_claims, index])
         )
 
     def answer(self, question, as_of=None):
