@@ -39,3 +39,28 @@ def test_refusal_has_no_digits_and_answers_are_deterministic():
     q = "How much is the overdraft fee?"
     assert long_tail_answer(sf, q).text == long_tail_answer(sf, q).text
     assert "$30" in long_tail_answer(sf, q).text
+
+
+def test_same_input_gives_identical_answers_across_builds():
+    """Determinism: two independently built systems and repeated calls agree exactly."""
+    from pathlib import Path
+
+    import solution
+    from run_eval import load_snapshots
+
+    root = Path(__file__).resolve().parents[1] / "harness/selftest/snapshots"
+    questions = [
+        ("What is the 6-month certificate APY?", None),
+        ("What was the 6-month certificate APY in January 2026?", "2026-01-31"),
+        ("How much is a lost debit card replacement?", None),
+        ("What is the SWIFT code?", None),
+    ]
+    runs = []
+    for _ in range(2):
+        ks = solution.build()
+        for snap in load_snapshots(root):
+            ks.ingest(snap)
+        runs.append([(ks.answer(q, a).text, ks.answer(q, a).text) for q, a in questions])
+        runs[-1].append(tuple(repr(c) for c in ks.conflicts()))
+    assert runs[0] == runs[1]
+    assert all(first == second for first, second in runs[0][:-1])

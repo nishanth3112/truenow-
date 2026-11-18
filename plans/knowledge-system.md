@@ -384,5 +384,5 @@ Verified when: fresh clone on Python 3.11 runs the public eval cleanly with and 
 | 3 Entities and branches | done 2026-11-17 (public 0.8713, dev 0.878; 0 trap hits; branch_info 0.97; Mullan refuses; dup-088 open, see Not yet specified) |
 | 4 Long tail and honesty | done 2026-11-18 except the with-key dev run (no key here): public 0.9101, dev 0.9193 without a key; should_refuse 1.00; paraphrase consistency 1.0 |
 | 5 Conflicts curation | done 2026-11-18: local conflicts F1 0.947, resolution 0.90 (27 submitted, 27 matched of 30); dev final 0.951 |
-| 6 Hardening and docs | not started |
+| 6 Hardening and docs | done 2026-11-18: determinism test; p95 0.0 s, slowest answer 0.01 s; fresh public clone from GitHub on Python 3.11 runs the grader command with no errors (0.9333, ingest 4.0 s) without a key; NOTES.md and README written. With-key run not possible (no key) |
 | 7 Submit | not started |
