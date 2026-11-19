@@ -141,6 +141,33 @@ def sentence_claims(page: Page, body: str, sid: str) -> list[Claim]:
     return out
 
 
+REGION = re.compile(r"find us in ((?:[A-Z][a-z]+, )*[A-Z][a-z]+,? and [A-Z][a-z]+)")
+
+
+def eligibility_claims(page: Page, text: str, sid: str) -> list[Claim]:
+    """The 'You're Eligible to Join' section: its 'You ...' criteria (one sentence in older
+    snapshots, a bullet list in newer ones), up to the 'To join ...' instructions."""
+    m = re.search(r"^#+ .*Eligible to Join.*$", text, re.M | re.I)
+    if not m:
+        return []
+    criteria = []
+    for line in text[m.end() :].split("\n"):
+        line = _plain(line).strip(" -*")
+        if line.startswith("#") or line.startswith("To join"):
+            break
+        for s in re.split(r"(?<=[.!?])\s+", line):
+            if s.startswith("To join"):
+                break
+            if s.startswith("You "):
+                criteria.append(s.rstrip("."))
+        if line and not line.startswith("You "):
+            break
+    if not criteria:
+        return []
+    value = "; ".join(criteria)
+    return [Claim("eligibility", "", "", value, page.url, None, sid, m[0].lstrip("# "))]
+
+
 def site_claims(page: Page, sid: str) -> list[Claim]:
     text = clean_text(page.markdown)
     out = [
@@ -163,6 +190,8 @@ def site_claims(page: Page, sid: str) -> list[Claim]:
         if "locator" in target.lower() and target.startswith("https://www.dupaco.com"):
             url = canonical_url(target)
             out.append(Claim("locator_url", "", "", url, page.url, None, sid, anchor))
+    out += eligibility_claims(page, text, sid)
+    out += [Claim("region", "", "", m[1], page.url, None, sid, m[0]) for m in REGION.finditer(text)]
     return out
 
 

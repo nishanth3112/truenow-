@@ -54,6 +54,14 @@ PARAPHRASE = {
     "dup-082": "Where do I apply for membership online?",
 }
 
+# More paraphrases for a group (added 2026-11-18 with the eligibility fact).
+EXTRA_PARAPHRASES = {
+    "dup-081": [
+        "What do I need to qualify for Dupaco membership?",
+        "Am I eligible for membership at Dupaco?",
+    ],
+}
+
 # (id, question, as_of, expected_answer, must_include, must_not_include, category, expected_sources)
 AS_OF = [
     (
@@ -403,6 +411,8 @@ def main():
         out.append(
             {**it, "id": it["id"] + "-p", "question": PARAPHRASE[it["id"]], "split": "paraphrase"}
         )
+        for n, q in enumerate(EXTRA_PARAPHRASES.get(it["id"], []), 2):
+            out.append({**it, "id": f"{it['id']}-p{n}", "question": q, "split": "paraphrase"})
     for i, q, as_of, exp, inc, exc, src in AS_OF:
         out.append(
             {

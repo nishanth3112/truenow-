@@ -161,3 +161,54 @@ def test_reported_relative_year_most_recent_and_current_counts():
     )
     assert "256" in latest.text and "294" not in latest.text
     assert "22 branch office" in entity_answer(sf, "How many branches does Dupaco have?", None).text
+
+
+JOIN_NEW = """You can find us in Iowa, Illinois and Wisconsin.
+
+## You're Eligible to Join If Any of These Sound Like You
+
+- You live or work within our [charter area](https://x/map.jpg).
+- You have an immediate family member who's a member.
+
+To join Dupaco, simply open a savings account with $25 or more.
+
+[Join Dupaco](https://join.dupaco.com/)
+"""
+JOIN_OLD = """You can find us in Iowa, Illinois and Wisconsin.
+
+## You're Eligible to Join Dupaco If ...
+
+You live or work within our charter area or have an immediate family member who's a member. \
+To join, simply open a savings account with $25 or more.
+
+[Join Dupaco](https://join.dupaco.com/)
+"""
+
+
+def with_pages(*pages) -> SnapshotFacts:
+    sf = snapshot()
+    for path, kind, md in pages:
+        url = "https://www.dupaco.com" + path
+        sf.pages[url] = Page(url, path, kind, "t", md, "2026-09-28T00:00:00Z")
+    sf.claims = []
+    entity_claims(sf)
+    return sf
+
+
+def test_eligibility_both_layouts_and_join_link_routing():
+    for md, criteria in [
+        (JOIN_NEW, "you live or work within our charter area; or you have an immediate family"),
+        (JOIN_OLD, "you live or work within our charter area or have an immediate family member"),
+    ]:
+        sf = with_pages(("/about/join", "product", md))
+        a = entity_answer(sf, "Who is eligible to become a Dupaco member?", None)
+        assert criteria in a.text and "Iowa, Illinois and Wisconsin" in a.text
+        assert a.sources[0].url.endswith("/about/join") and "$25" not in a.text
+        assert "join.dupaco.com" in entity_answer(sf, "How do I join Dupaco online?", None).text
+
+
+def test_hours_cite_release_then_locator():
+    locator = "[Find a branch](https://www.dupaco.com/contact#dupaco-locator-widget_1)"
+    sf = with_pages(("/personal", "product", locator))
+    a = entity_answer(sf, "What are the drive-up hours at the East Washington branch?", None)
+    assert [s.url.rsplit("/", 1)[-1] for s in a.sources] == ["east-washington", "contact"]

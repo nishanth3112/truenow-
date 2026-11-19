@@ -99,6 +99,30 @@ def closure_answer(
     return Answer(text=text, sources=cite([c, *alts]))
 
 
+def with_locator(sf: SnapshotFacts, sources: list[Source]) -> list[Source]:
+    """Hours come from opening releases; the branch locator follows them as a source."""
+    found = most_common(sf.claims, "locator_url")
+    if found and found[0] not in {s.url for s in sources}:
+        sources = [*sources, Source(url=found[0], snapshot_id=sf.snapshot_id)]
+    return sources
+
+
+def eligibility_answer(sf: SnapshotFacts) -> Answer:
+    found = most_common(sf.claims, "eligibility")
+    if not found:
+        return refuse()
+    value, claims = found
+    criteria = [c[0].lower() + c[1:] for c in value.split("; ")]
+    listed = (
+        criteria[0] if len(criteria) == 1 else "; ".join(criteria[:-1]) + "; or " + criteria[-1]
+    )
+    text = f"You're eligible to join Dupaco if: {listed}."
+    region = most_common([c for c in sf.claims if c.url == claims[0].url], "region")
+    if region:
+        text += f" Dupaco's locations are in {region[0]}."
+    return Answer(text=text, sources=cite(claims))
+
+
 def hours_answer(sf: SnapshotFacts, question: str, words: list[str]) -> Answer:
     section = "drive-up" if re.search(r"drive", question, re.I) else "lobby"
     claims = [c for c in sf.claims if c.kind == "hours" and c.key == section]
@@ -118,7 +142,7 @@ def hours_answer(sf: SnapshotFacts, question: str, words: list[str]) -> Answer:
         text = (
             f"{label} hours at the {cs[0].subject}: {value} (opening announcement, {when(cs[0])})."
         )
-        return Answer(text=text, sources=cite(cs))
+        return Answer(text=text, sources=with_locator(sf, cite(cs)))
     parts = [f"{' and '.join(c.subject for c in cs)}: {value}" for value, cs in by_schedule.items()]
     lead = (
         "No, they differ by branch. "
@@ -129,7 +153,7 @@ def hours_answer(sf: SnapshotFacts, question: str, words: list[str]) -> Answer:
         f"{lead}{label} hours vary by branch. From Dupaco's branch opening announcements: "
         f"{' | '.join(parts)}. Which branch are you asking about?"
     )
-    return Answer(text=text, sources=cite(claims))
+    return Answer(text=text, sources=with_locator(sf, cite(claims)))
 
 
 def address_answer(sf: SnapshotFacts, words: list[str]) -> Answer:
@@ -287,6 +311,8 @@ def entity_answer(sf: SnapshotFacts, question: str, as_of: str | None) -> Answer
         return address_answer(sf, words)
     if re.search(r"locator|finder|find (a|an|the) (branch|atm)|branch(es)? (and|&) atm", q, re.I):
         return site_fact(sf, "locator_url", "Find Dupaco branches and ATMs at {}")
+    if re.search(r"eligib|who can join|qualif|requirements? to (join|become)|can i join", q, re.I):
+        return eligibility_answer(sf)
     if re.search(r"\bjoin\b|membership|become a member", q, re.I) and not re.search(
         r"eligib|who can|qualif", q, re.I
     ):
