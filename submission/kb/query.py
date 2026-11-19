@@ -75,6 +75,8 @@ SYNONYMS = [
     (r"\bcar loans?\b", "auto loan"),
     (r"\bhome loans?\b", "mortgage"),
     (r"\b(atm|check) cards?\b", "debit card"),
+    # /savings-account/online-savings-account is the Bright Savings page ("Online-Only Savings")
+    (r"\bonline(?:-only)? savings(?: accounts?)?\b", "Bright Savings account"),
 ]
 
 

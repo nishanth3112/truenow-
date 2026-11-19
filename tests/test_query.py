@@ -50,4 +50,7 @@ def test_synonyms_map_to_site_words():
     )
     assert normalize_synonyms("car loan and home loan rates") == "auto loan and mortgage rates"
     assert normalize_synonyms("lost my ATM card") == "lost my debit card"
+    q = normalize_synonyms("What does your online savings account pay?")
+    assert q == "What does your Bright Savings account pay?"
+    assert parse(q).families == ["bright_savings"]
     assert parse(normalize_synonyms("What are your CD rates?")).families == ["certificate"]
