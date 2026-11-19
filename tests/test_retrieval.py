@@ -54,3 +54,20 @@ def test_unseen_words_and_speed():
     for _ in range(100):
         ix.search("Which mobile wallets work with my debit card?")
     assert (time.perf_counter() - t) / 100 < 0.05
+
+
+def test_rows_and_amount_lines_are_statements():
+    from kb.retrieval import statement
+
+    assert statement("|Rush fee for debit card|$50.00*|") == "Rush fee for debit card: $50.00*."
+    assert statement("Rush fee for debit card $50.00*") == "Rush fee for debit card $50.00*."
+    assert statement("a wrapped line of prose") == "a wrapped line of prose"
+
+
+def test_unseen_product_phrase():
+    md = "# Loans\n\nCompare our boat & RV loans and fixed-rate mortgage options for every budget."
+    ix = Index(snapshot([("/personal/loans", "product", md)]))
+    assert ix.unseen_product("What rate do you offer on a reverse mortgage?") == "reverse mortgage"
+    assert ix.unseen_product("Can I cash savings bonds?") == "saving bond"  # overlapping pairs
+    assert ix.unseen_product("What's the rate on a boat loan?") is None  # 'boat ... loan' nearby
+    assert ix.unseen_product("I need a new car - any loan options?") is None  # not adjacent

@@ -16,6 +16,7 @@ REFUSAL = "It isn't listed; please contact us."
 MIN_SCORE = 3.0  # below this the best chunk shares almost nothing with the question
 MIN_COVER = 0.5  # with a word the site never uses, the evidence must cover this share of the rest
 TOP_K = 5
+NOT_NAMES = {"dupaco", "dupaco's", "dupaco’s", "i", "i'm", "i’m", "i'd", "i’ve", "i've"}
 MAX_CHARS = 450
 
 
@@ -69,8 +70,16 @@ def coverage(index: Index, question: str, score: float) -> float:
     return score / mass
 
 
+def names(question: str) -> list[str]:
+    """Capitalised names inside a question ('Zelle', 'Apple Pay'), not its first word."""
+    words = re.findall(r"[A-Za-z][\w$'’&-]*", question)[1:]
+    return [w for w in words if w[0].isupper() and not w.isupper() and w.lower() not in NOT_NAMES]
+
+
 def long_tail_answer(sf: SnapshotFacts, question: str) -> Answer:
     index, snapshot_id = sf.index, sf.snapshot_id
+    if index.unseen_product(question):
+        return refuse()
     hits = index.search(question, TOP_K)
     if not hits or hits[0][0] < MIN_SCORE:
         return refuse()
@@ -79,7 +88,11 @@ def long_tail_answer(sf: SnapshotFacts, question: str) -> Answer:
     if index.unseen(question) and coverage(index, question, score) < MIN_COVER:
         return refuse()  # the best sentence misses most of what was asked (e.g. a SWIFT code)
     text = " ".join(sents[i : i + 2])
-    if chunk.heading and chunk.heading.lower() not in text.lower():
+    if (
+        chunk.heading
+        and not chunk.heading.startswith("http")
+        and chunk.heading.lower() not in text.lower()
+    ):
         text = f"{chunk.heading.strip('*')}: {text}"
     sources = [Source(url=chunk.url, snapshot_id=snapshot_id, quote=sents[i][:200])]
     # a second chunk's sentence joins only if it adds a fifth of the question's weight
@@ -92,6 +105,9 @@ def long_tail_answer(sf: SnapshotFacts, question: str) -> Answer:
         sources.append(
             Source(url=extra[2].url, snapshot_id=snapshot_id, quote=extra[4][extra[3]][:200])
         )
+    missing = [n for n in names(question) if n.lower() not in f"{chunk.heading} {text}".lower()]
+    if missing:
+        return refuse()  # the question names something (a brand, a service) the evidence never does
     excerpts = [f"{c.heading}: {c.text}" for _, c, _ in hits[:3]]
     composed = llm.compose(question, excerpts, snapshot_id, lambda t: superseded(sf, t))
     if composed == llm.NOT_FOUND:

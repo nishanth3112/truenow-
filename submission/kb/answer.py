@@ -361,5 +361,7 @@ def answer(ledger: Ledger, question: str, as_of: str | None = None) -> Answer:
         return refuse()
     q = parse(question)
     if q.intent in ("rate", "rate_link"):
+        if sf.index is not None and sf.index.unseen_product(question):
+            return refuse()  # e.g. a reverse mortgage: the site never names that product
         return rate_answer(ledger, sf, q, as_of)
     return entity_answer(sf, question, as_of) or long_tail_answer(sf, question)

@@ -30,6 +30,14 @@ def test_fresh_eval_frozen():
     assert hashlib.sha256((ROOT / "dev/fresh_eval.jsonl").read_bytes()).hexdigest() == FRESH_SHA256
 
 
+# dev/fresh2_eval.jsonl is frozen: written once (2026-11-19) before the system was run on it.
+FRESH2_SHA256 = "0a086c5950b83bfbd0e03ac4557b3c0c64803df622eda771700e378292095343"
+
+
+def test_fresh2_eval_frozen():
+    assert hashlib.sha256((ROOT / "dev/fresh2_eval.jsonl").read_bytes()).hexdigest() == FRESH2_SHA256
+
+
 def _tracked():
     return subprocess.run(
         ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True

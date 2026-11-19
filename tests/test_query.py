@@ -49,5 +49,5 @@ def test_synonyms_map_to_site_words():
         "What's the APY on a 12-month certificate?"
     )
     assert normalize_synonyms("car loan and home loan rates") == "auto loan and mortgage rates"
-    assert "MoneyCard" in normalize_synonyms("lost my ATM card")
+    assert normalize_synonyms("lost my ATM card") == "lost my debit card"
     assert parse(normalize_synonyms("What are your CD rates?")).families == ["certificate"]

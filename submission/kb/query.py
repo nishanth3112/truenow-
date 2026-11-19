@@ -75,7 +75,6 @@ SYNONYMS = [
     (r"\bcar loans?\b", "auto loan"),
     (r"\bhome loans?\b", "mortgage"),
     (r"\b(atm|check) cards?\b", "debit card"),
-    (r"\bdebit cards?\b", "debit card MoneyCard"),
 ]
 
 

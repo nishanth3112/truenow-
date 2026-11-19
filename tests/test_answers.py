@@ -64,3 +64,12 @@ def test_same_input_gives_identical_answers_across_builds():
         runs[-1].append(tuple(repr(c) for c in ks.conflicts()))
     assert runs[0] == runs[1]
     assert all(first == second for first, second in runs[0][:-1])
+
+
+def test_name_missing_from_evidence_refuses():
+    sf = snapshot()
+    assert (
+        long_tail_answer(sf, "Does Dupaco charge a fee to send money with Zelle?").text == REFUSAL
+    )
+    a = long_tail_answer(sf, "Can I use my Dupaco cards with Apple Pay?")
+    assert "Apple Pay" in a.text and a.confident

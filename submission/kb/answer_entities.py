@@ -16,7 +16,10 @@ STOP = set(
     "we our my me what which who when where how many much can could would should will dupaco "
     "dupaco's it its this that there their with from about any all".split()
 )
-BRANCH = re.compile(r"((?:[A-Z][\w.'’-]*\s+)*[A-Z][\w.'’-]*)\s+[Bb]ranch")
+# "the Galena branch", "the old Hy-Vee location", "the Asbury office"
+BRANCH = re.compile(
+    r"((?:[A-Z][\w.'’-]*\s+)*[A-Z][\w.'’-]*)\s+(?:[Bb]ranch|[Ll]ocation|[Oo]ffice)\b"
+)
 
 
 def refuse() -> Answer:
@@ -286,7 +289,10 @@ def entity_answer(sf: SnapshotFacts, question: str, as_of: str | None) -> Answer
     q = question
     words = branch_words(q)
     if words and re.search(
-        r"clos|still open|open today|still bank|instead|members go|full-service", q, re.I
+        r"clos|still open|open today|still bank|instead|members go|full-service|took over|replac|"
+        r"alternative",
+        q,
+        re.I,
     ):
         found = closure_answer(sf, q, words, as_of)
         if found:

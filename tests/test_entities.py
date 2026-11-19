@@ -212,3 +212,8 @@ def test_hours_cite_release_then_locator():
     sf = with_pages(("/personal", "product", locator))
     a = entity_answer(sf, "What are the drive-up hours at the East Washington branch?", None)
     assert [s.url.rsplit("/", 1)[-1] for s in a.sources] == ["east-washington", "contact"]
+
+
+def test_branch_location_wording_and_replacement():
+    a = entity_answer(snapshot(), "Which branches took over for the old Hy-Vee location?", None)
+    assert "Key West and Sycamore Street" in a.text
