@@ -54,3 +54,13 @@ gets no tools and a 6-second timeout, and is not retried (except once, without t
 setting, if the model rejects it). Every number in its answer must appear in the question or the
 excerpts, and must not be a value the resolver ruled stale; otherwise the extracted answer is
 used. `KB_LLM_MODEL` and `KB_LLM_EFFORT` (default `none`) change the model and reasoning effort.
+
+## Known limits
+
+On a frozen set of 20 questions written before the system saw them, it scored 0.85, with three
+misses. A fee that sits in a fee-schedule row can lose to a product page about the same service
+(the incoming-wire fee came back as the wire-transfer page instead of "$10.00"). A question that
+uses "hours" in another sense ("volunteer hours") without "how many" is routed to branch hours.
+A question about a product the site never offers (a cryptocurrency trading account) was answered
+with a loosely related sentence instead of a refusal. The optional model path has never been
+run against a key, so its effect on accuracy, consistency and speed is untested.

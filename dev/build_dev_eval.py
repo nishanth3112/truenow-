@@ -397,6 +397,132 @@ HELDOUT = [
 ]
 
 
+# Common adjectives before product nouns (added 2026-11-19 to test refusal rule B), all answerable;
+# values traced in snapshot 05 with dev/trace.py.
+MODIFIER = [
+    (
+        "mod-01",
+        "What's the best certificate rate right now?",
+        "4.20% APY (17 Month Fixed Jumbo Special).",
+        ["4.20%"],
+        [],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-02",
+        "What APR is a new car loan for a 2026 model over 60 months?",
+        "5.39% APR (2024-27, 60 months).",
+        ["5.39%"],
+        ["5.34%"],
+        "stale_trap",
+    ),
+    (
+        "mod-03",
+        "What APR do you charge on a used car loan for a 2018 model over 72 months?",
+        "6.49% APR (2017-20, 72 months).",
+        ["6.49%"],
+        ["6.44%"],
+        "stale_trap",
+    ),
+    (
+        "mod-04",
+        "What's the lowest mortgage rate you offer?",
+        "6.75% rate (15-year fixed purchase).",
+        ["6.75"],
+        [],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-05",
+        "What's the highest checking account APY?",
+        "2.50% APY (1st Rate Checking, $5,000-$24,999.99).",
+        ["2.50%"],
+        ["3.00%"],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-06",
+        "What's the current personal loan rate for 48 months?",
+        "10.99% APR.",
+        ["10.99%"],
+        [],
+        "current_value",
+    ),
+    (
+        "mod-07",
+        "What is the standard credit card APR on the Rewards Visa?",
+        "15.50%-21.00% APR.",
+        ["15.5", "21"],
+        [],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-08",
+        "What does a regular certificate pay for 36 months?",
+        "2.10% APY.",
+        ["2.10%"],
+        [],
+        "current_value",
+    ),
+    (
+        "mod-09",
+        "What's the APY on a basic savings account with $500?",
+        "0.10% APY (Share Savings $100-$2,499.99).",
+        ["0.10%"],
+        ["0.20%"],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-10",
+        "What's the cheapest auto loan rate for a 2025 vehicle?",
+        "5.19% APR (2024-27, 48 months).",
+        ["5.19%"],
+        [],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-11",
+        "What does your online savings account pay?",
+        "2.25% APY (Bright Savings, online-only).",
+        ["2.25%"],
+        [],
+        "current_value",
+    ),
+    (
+        "mod-12",
+        "What APY does a joint checking account earn on $10,000?",
+        "2.50% APY (1st Rate Checking).",
+        ["2.50%"],
+        ["3.00%"],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-13",
+        "What mortgage rate would a first-time homebuyer get on a 30-year loan for $180,000?",
+        "7.25% rate / 7.34% APR ($200,000-or-less tier, purchase).",
+        ["7.25"],
+        ["5.875%"],
+        "tier_disambiguation",
+    ),
+    (
+        "mod-14",
+        "What's the APR on a small business credit card?",
+        "Business Platinum Visa 15.50% APR; Business Rewards Visa 20.50% APR.",
+        ["15.5", "20.5"],
+        [],
+        "list_completeness",
+    ),
+    (
+        "mod-15",
+        "Does Dupaco offer student loan refinancing?",
+        "Yes: Student Loans & Refinancing.",
+        ["student loan", "refinanc"],
+        [],
+        "entity_attribution",
+    ),
+]
+
+
 def main():
     public = [
         json.loads(line)
@@ -459,6 +585,22 @@ def main():
                 "expected_sources": src,
                 "group": None,
                 "split": "heldout",
+            }
+        )
+    for i, q, exp, inc, exc, cat in MODIFIER:
+        out.append(
+            {
+                "id": i,
+                "question": q,
+                "as_of": None,
+                "expected_answer": exp,
+                "must_include": inc,
+                "must_not_include": exc,
+                "category": cat,
+                "weight": 1.0,
+                "expected_sources": [],
+                "group": None,
+                "split": "modifier",
             }
         )
     assert len({it["id"] for it in out}) == len(out)
